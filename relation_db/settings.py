@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-=n7io&@38(qi97jy)hss&1u*nic7n(#z)@)p@s2zkl21!vh5(m
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.248.128']
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'  # 登录后重定向到首页
@@ -117,3 +117,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+STATIC_ROOT = BASE_DIR / 'mystatic'
