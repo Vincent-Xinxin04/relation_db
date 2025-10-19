@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>订单管理 - 供应链系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --light-bg: #f8f9fa;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            background-color: #f5f7ff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .customer-card, .product-card {
+            transition: all 0.3s;
+            border: none;
+            border-radius: 12px;
+        }
+
+        .customer-card:hover, .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .log-row {
+            font-size: 0.9rem;
+        }
+
+        .duration-badge {
+            font-size: 0.8rem;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            min-width: 300px;
+            border-radius: 10px;
+        }
+
+        .toast-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .toast-error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .toast-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .toast-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; height: 0; overflow: hidden; margin: 0; padding: 0; }
+        }
+
+        .selected-product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .selected-products-summary {
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-total {
+            font-weight: bold;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.4rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4cc9f0, #4895ef);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 201, 240, 0.3);
+        }
+
+        .product-card {
+            height: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s;
+            cursor: pointer;
+            border-top: 4px solid transparent;
+        }
+
+        .product-card:hover {
+            border-top: 4px solid var(--primary-color);
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .product-card h6 {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .product-stock {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #dee2e6;
+        }
+
+        .order-action-bar {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e9ecef;
+            color: #6c757d;
+            font-weight: 600;
+        }
+
+        .step.active .step-circle {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .step.active .step-label {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            font-weight: 500;
+            padding: 12px 20px;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            background: transparent;
+        }
+
+        .card-header {
+            background: white;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body class="container mt-4">
+    <!-- 消息提示容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark bg-primary mb-4 rounded-3">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'order_manage' %}">
+                <i class="fas fa-boxes me-2"></i>供应链订单管理
+            </a>
+            <div>
+                <span class="text-white me-3">当前用户：{{ user.username }}</span>
+                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-light btn-sm">
+                        <i class="fas fa-sign-out-alt me-1"></i>退出
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 标签页 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0">
+            <ul class="nav nav-tabs card-header-tabs border-0" id="myTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" role="tab">
+                        <i class="fas fa-list me-1"></i>订单列表
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" role="tab">
+                        <i class="fas fa-plus-circle me-1"></i>创建订单
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers" role="tab">
+                        <i class="fas fa-users me-1"></i>客户管理
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" role="tab">
+                        <i class="fas fa-history me-1"></i>系统日志
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="tab-content p-4" id="myTabContent">
+
+               <!-- 标签1：订单列表 -->
+                <div class="tab-pane fade" id="list" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>订单编号</th>
+                                    <th>客户信息</th>
+                                    <th>商品数量</th>
+                                    <th>总金额</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTableBody">
+                                {% for order in orders %}
+                                <tr id="order-{{ order.order_id }}">
+                                    <td>{{ order.order_code }}</td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ order.cust_name }}</strong><br>
+                                            <small class="text-muted">{{ order.cust_phone }}</small>
+                                            <button class="btn btn-sm btn-outline-info ms-2"
+                                                    onclick="showCustomerDetail({{ order.customer_id }})">
+                                                详情
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>{{ order.item_count }}个</td>
+                                    <td>¥{{ order.total_amount }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm"
+                                                onchange="updateStatus({{ order.order_id }}, this.value, '{{ order.order_code }}')">
+                                            <option value="待处理" {% if order.status == '待处理' %}selected{% endif %}>待处理</option>
+                                            <option value="已发货" {% if order.status == '已发货' %}selected{% endif %}>已发货</option>
+                                            <option value="已完成" {% if order.status == '已完成' %}selected{% endif %}>已完成</option>
+                                        </select>
+                                    </td>
+                                    <td>{{ order.create_time|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger"
+                                                onclick="deleteOrder({{ order.order_id }}, '{{ order.order_code }}')">删除</button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr id="no-orders"><td colspan="7" class="text-center">暂无订单数据</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 标签2：创建订单 -->
+                <div class="tab-pane fade show active" id="create" role="tabpanel">
+                    <form id="orderForm" method="post" action="{% url 'order_create' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="items" id="itemsInput">
+
+                        <!-- 订单操作栏 -->
+                        <div class="order-action-bar">
+                            <h2 class="order-title">创建新订单</h2>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle me-2"></i>提交订单
+                            </button>
+                        </div>
+
+                        <!-- 步骤指示器 -->
+                        <div class="step-indicator">
+                            <div class="step active">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">客户信息</div>
+                            </div>
+                            <div class="step">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">选择商品</div>
+                            </div>
+                            <div class="step">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">确认订单</div>
+                            </div>
+                        </div>
+
+                        <!-- 客户信息部分 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <i class="fas fa-user"></i>客户信息
+                            </div>
+
+                            <!-- 客户选择 -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">选择客户</label>
+                                <select class="form-select" id="customerSelect" onchange="fillCustomerInfo()">
+                                    <option value="">-- 选择现有客户 --</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.customer_id }}"
+                                            data-name="{{ customer.name }}"
+                                            data-phone="{{ customer.phone }}"
+                                            data-address="{{ customer.address }}">
+                                        {{ customer.name }} ({{ customer.phone }}) - {{ customer.address }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- 客户信息 -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">客户姓名</label>
+                                    <input type="text" name="cust_name" id="cust_name" class="form-control" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">客户电话</label>
+                                    <input type="text" name="cust_phone" id="cust_phone" class="form-control" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">客户地址</label>
+                                    <input type="text" name="cust_addr" id="cust_addr" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 已选商品部分 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <i class="fas fa-shopping-cart"></i>已选商品
+                            </div>
+
+                            <div id="selectedProducts" class="mb-3">
+                                <div class="empty-state">
+                                    <i class="fas fa-box-open"></i>
+                                    <p>暂无商品，请从下方选择</p>
+                                </div>
+                            </div>
+
+                            <!-- 订单摘要 -->
+                            <div id="orderSummary" class="selected-products-summary" style="display: none;">
+                                <div class="summary-row">
+                                    <span>商品数量:</span>
+                                    <span id="summary-items-count">0</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>商品总价:</span>
+                                    <span id="summary-items-total">¥0.00</span>
+                                </div>
+                                <div class="summary-row summary-total">
+                                    <span>订单总额:</span>
+                                    <span id="summary-order-total">¥0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 商品选择部分 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                <i class="fas fa-boxes"></i>选择商品（点击添加）
+                            </div>
+
+                            <div class="row g-3" id="productList">
+                                {% for prod in products %}
+                                <div class="col-md-3">
+                                    <div class="product-card cursor-pointer"
+                                         onclick="addProduct({{ prod.product_id }}, '{{ prod.name }}', {{ prod.stock }}, {{ prod.price }})">
+                                        <h6>{{ prod.name }}</h6>
+                                        <div class="product-price">¥{{ prod.price }}</div>
+                                        <div class="product-stock">库存：{{ prod.stock }} | 分类：{{ prod.categories|default:"无" }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 标签3：客户管理 -->
+                <div class="tab-pane fade" id="customers" role="tabpanel">
+                    <div class="customer-header">
+                        <h5>客户列表</h5>
+                        <button class="btn btn-success" onclick="showAddCustomerModal()">新增客户</button>
+                    </div>
+                    <div class="row" id="customerListContainer">
+                        {% for customer in customers %}
+                        <div class="col-md-6 mb-3" id="customer-{{ customer.customer_id }}">
+                            <div class="card customer-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ customer.name }}</h5>
+                                    <p class="card-text">
+                                        <strong>电话:</strong> {{ customer.phone }}<br>
+                                        <strong>地址:</strong> {{ customer.address }}<br>
+                                        <strong>注册日期:</strong> {{ customer.reg_date }}<br>
+                                        <strong>订单数量:</strong> {{ customer.order_count|default:0 }}<br>
+                                        <strong>总消费:</strong> ¥{{ customer.total_spent|default:"0.00" }}
+                                    </p>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-primary"
+                                                onclick="showCustomerDetail({{ customer.customer_id }})">
+                                            查看详情
+                                        </button>
+                                        <button class="btn btn-sm btn-warning"
+                                                onclick="editCustomer({{ customer.customer_id }}, '{{ customer.name|escapejs }}', '{{ customer.phone|escapejs }}', '{{ customer.address|escapejs }}')">
+                                            编辑
+                                        </button>
+                                        <button class="btn btn-sm btn-danger"
+                                                onclick="deleteCustomer({{ customer.customer_id }}, '{{ customer.name|escapejs }}')">
+                                            删除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12" id="no-customers">
+                            <div class="alert alert-info">暂无客户数据</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 标签4：系统日志 -->
+                <div class="tab-pane fade" id="logs" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>用户</th>
+                                    <th>访问路径</th>
+                                    <th>开始时间</th>
+                                    <th>结束时间</th>
+                                    <th>耗时(秒)</th>
+                                    <th>IP地址</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in access_logs %}
+                                <tr class="log-row">
+                                    <td>
+                                        {% if log.username %}
+                                            {{ log.username }}
+                                        {% else %}
+                                            <span class="text-muted">匿名用户</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><code>{{ log.path }}</code></td>
+                                    <td>{{ log.start_time|date:"m-d H:i:s" }}</td>
+                                    <td>{{ log.end_time|date:"m-d H:i:s" }}</td>
+                                    <td>
+                                        <span class="badge {% if log.duration < 1 %}bg-success{% elif log.duration < 3 %}bg-warning{% else %}bg-danger{% endif %} duration-badge">
+                                            {{ log.duration|floatformat:3 }}
+                                        </span>
+                                    </td>
+                                    <td><small>{{ log.ip }}</small></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">暂无日志数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 客户详情模态框 -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">客户详细信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="customerModalBody">
+                    <!-- 内容通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑客户模态框 -->
+    <div class="modal fade" id="editCustomerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑客户信息</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCustomerForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="editCustomerId" name="customer_id">
+                        <div class="mb-3">
+                            <label class="form-label">客户姓名</label>
+                            <input type="text" id="editCustomerName" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">客户电话</label>
+                            <input type="text" id="editCustomerPhone" name="phone" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">客户地址</label>
+                            <input type="text" id="editCustomerAddress" name="address" class="form-control" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="submitCustomerEdit()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增客户模态框 -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新增客户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCustomerForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">客户姓名</label>
+                            <input type="text" id="addCustomerName" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">客户电话</label>
+                            <input type="text" id="addCustomerPhone" name="phone" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">客户地址</label>
+                            <input type="text" id="addCustomerAddress" name="address" class="form-control" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAddCustomer()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteConfirmMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteAction()">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 已选商品列表
+        let selectedProducts = [];
+
+        // 模态框实例
+        let editModalInstance = null;
+        let addModalInstance = null;
+
+        // 删除确认相关变量
+        let currentDeleteAction = null;
+        let currentDeleteParams = null;
+
+        // 显示精美提示消息
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+
+            const toastHTML = `
+                <div id="${toastId}" class="toast custom-toast align-items-center toast-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 4000
+            });
+            toast.show();
+
+            // 自动移除DOM元素
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                toastElement.remove();
+            });
+        }
+
+        // 填充客户信息
+        function fillCustomerInfo() {
+            const select = document.getElementById('customerSelect');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (selectedOption.value) {
+                document.getElementById('cust_name').value = selectedOption.dataset.name;
+                document.getElementById('cust_phone').value = selectedOption.dataset.phone;
+                document.getElementById('cust_addr').value = selectedOption.dataset.address;
+            }
+        }
+
+        // 显示客户详情
+        function showCustomerDetail(customerId) {
+            console.log('获取客户详情:', customerId);
+
+            fetch(`/customer/${customerId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('客户详情响应:', data);
+
+                    if (data.code === 200) {
+                        const customer = data.data;
+                        const modalBody = document.getElementById('customerModalBody');
+
+                        let html = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>基本信息</h6>
+                                    <p><strong>姓名:</strong> ${customer.name}</p>
+                                    <p><strong>电话:</strong> ${customer.phone}</p>
+                                    <p><strong>地址:</strong> ${customer.address}</p>
+                                    <p><strong>注册日期:</strong> ${customer.reg_date}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>订单统计</h6>
+                                    <p><strong>总订单数:</strong> ${customer.order_stats.total_orders || 0}</p>
+                                    <p><strong>总消费金额:</strong> ¥${customer.order_stats.total_spent || '0.00'}</p>
+                                    <p><strong>平均订单价值:</strong> ¥${customer.order_stats.avg_order_value ? customer.order_stats.avg_order_value.toFixed(2) : '0.00'}</p>
+                                    <p><strong>最后订单:</strong> ${customer.order_stats.last_order_date || '无'}</p>
+                                </div>
+                            </div>
+                        `;
+
+                        if (customer.recent_orders && customer.recent_orders.length > 0) {
+                            html += `
+                                <hr>
+                                <h6>最近订单</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>订单号</th>
+                                                <th>金额</th>
+                                                <th>状态</th>
+                                                <th>时间</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+
+                            customer.recent_orders.forEach(order => {
+                                html += `
+                                    <tr>
+                                        <td>${order.order_code}</td>
+                                        <td>¥${order.total_amount}</td>
+                                        <td>${order.status}</td>
+                                        <td>${new Date(order.create_time).toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            });
+
+                            html += `</tbody></table></div>`;
+                        }
+
+                        modalBody.innerHTML = html;
+                        new bootstrap.Modal(document.getElementById('customerModal')).show();
+                    } else {
+                        showToast('获取客户信息失败: ' + data.msg, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('获取客户信息时发生错误: ' + error.message, 'error');
+                });
+        }
+
+        // 编辑客户
+        function editCustomer(customerId, name, phone, address) {
+            console.log('编辑客户:', customerId, name, phone, address);
+
+            document.getElementById('editCustomerId').value = customerId;
+            document.getElementById('editCustomerName').value = name;
+            document.getElementById('editCustomerPhone').value = phone;
+            document.getElementById('editCustomerAddress').value = address;
+
+            editModalInstance = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+            editModalInstance.show();
+        }
+
+        // 提交客户编辑
+        function submitCustomerEdit() {
+            const customerId = document.getElementById('editCustomerId').value;
+            const formData = new FormData(document.getElementById('editCustomerForm'));
+
+            console.log('提交客户编辑:', customerId);
+
+            fetch(`/customer/${customerId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('编辑响应:', data);
+
+                if (data.code === 200) {
+                    showToast('客户信息更新成功', 'success');
+                    if (editModalInstance) {
+                        editModalInstance.hide();
+                    }
+
+                    // 修复：使用表单数据更新客户卡片，而不是依赖后端返回的updated_customer
+                    const name = document.getElementById('editCustomerName').value;
+                    const phone = document.getElementById('editCustomerPhone').value;
+                    const address = document.getElementById('editCustomerAddress').value;
+
+                    updateCustomerCard(customerId, name, phone, address);
+
+                    // 同时更新客户选择下拉框
+                    updateCustomerSelect(customerId, name, phone, address);
+                } else {
+                    showToast('更新失败: ' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('更新客户信息时发生错误: ' + error.message, 'error');
+            });
+        }
+
+        // 更新客户卡片信息
+        function updateCustomerCard(customerId, name, phone, address) {
+            const customerCard = document.getElementById(`customer-${customerId}`);
+            if (customerCard) {
+                const cardBody = customerCard.querySelector('.card-body');
+                // 保留原有的订单数量和总消费信息
+                const orderCount = customerCard.querySelector('.card-text').innerText.match(/订单数量:\s*(\d+)/)[1] || 0;
+                const totalSpent = customerCard.querySelector('.card-text').innerText.match(/总消费:\s*¥([\d.]+)/)[1] || '0.00';
+                const regDate = customerCard.querySelector('.card-text').innerText.match(/注册日期:\s*([^\n]+)/)[1] || '';
+
+                cardBody.innerHTML = `
+                    <h5 class="card-title">${name}</h5>
+                    <p class="card-text">
+                        <strong>电话:</strong> ${phone}<br>
+                        <strong>地址:</strong> ${address}<br>
+                        <strong>注册日期:</strong> ${regDate}<br>
+                        <strong>订单数量:</strong> ${orderCount}<br>
+                        <strong>总消费:</strong> ¥${totalSpent}
+                    </p>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-primary"
+                                onclick="showCustomerDetail(${customerId})">
+                            查看详情
+                        </button>
+                        <button class="btn btn-sm btn-warning"
+                                onclick="editCustomer(${customerId}, '${name}', '${phone}', '${address}')">
+                            编辑
+                        </button>
+                        <button class="btn btn-sm btn-danger"
+                                onclick="deleteCustomer(${customerId}, '${name}')">
+                            删除
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 更新客户选择下拉框
+        function updateCustomerSelect(customerId, name, phone, address) {
+            const customerSelect = document.getElementById('customerSelect');
+            const option = customerSelect.querySelector(`option[value="${customerId}"]`);
+            if (option) {
+                option.textContent = `${name} (${phone}) - ${address}`;
+                option.dataset.name = name;
+                option.dataset.phone = phone;
+                option.dataset.address = address;
+            }
+        }
+
+        // 显示新增客户模态框
+        function showAddCustomerModal() {
+            document.getElementById('addCustomerForm').reset();
+            addModalInstance = new bootstrap.Modal(document.getElementById('addCustomerModal'));
+            addModalInstance.show();
+        }
+
+        // 提交新增客户
+        function submitAddCustomer() {
+            const formData = new FormData(document.getElementById('addCustomerForm'));
+
+            fetch('/customer/create/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('新增客户响应:', data);
+
+                if (data.code === 200) {
+                    showToast('客户添加成功', 'success');
+                    if (addModalInstance) {
+                        addModalInstance.hide();
+                    }
+
+                    // 添加新客户到页面
+                    addCustomerToPage(data.customer);
+                } else {
+                    showToast('添加失败: ' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('添加客户时发生错误: ' + error.message, 'error');
+            });
+        }
+
+        // 添加新客户到页面
+        function addCustomerToPage(customer) {
+            const customerListContainer = document.getElementById('customerListContainer');
+
+            // 如果当前显示的是"暂无客户数据"，则先清除
+            const noCustomers = document.getElementById('no-customers');
+            if (noCustomers) {
+                customerListContainer.innerHTML = '';
+            }
+
+            // 添加新客户卡片
+            const newCustomerCard = `
+                <div class="col-md-6 mb-3" id="customer-${customer.customer_id}">
+                    <div class="card customer-card">
+                        <div class="card-body">
+                            <h5 class="card-title">${customer.name}</h5>
+                            <p class="card-text">
+                                <strong>电话:</strong> ${customer.phone}<br>
+                                <strong>地址:</strong> ${customer.address}<br>
+                                <strong>注册日期:</strong> ${customer.reg_date}<br>
+                                <strong>订单数量:</strong> ${customer.order_count || 0}<br>
+                                <strong>总消费:</strong> ¥${customer.total_spent || '0.00'}
+                            </p>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-primary"
+                                        onclick="showCustomerDetail(${customer.customer_id})">
+                                    查看详情
+                                </button>
+                                <button class="btn btn-sm btn-warning"
+                                        onclick="editCustomer(${customer.customer_id}, '${customer.name}', '${customer.phone}', '${customer.address}')">
+                                    编辑
+                                </button>
+                                <button class="btn btn-sm btn-danger"
+                                        onclick="deleteCustomer(${customer.customer_id}, '${customer.name}')">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            customerListContainer.insertAdjacentHTML('beforeend', newCustomerCard);
+
+            // 添加到客户选择下拉框
+            const customerSelect = document.getElementById('customerSelect');
+            const newOption = new Option(
+                `${customer.name} (${customer.phone}) - ${customer.address}`,
+                customer.customer_id
+            );
+            newOption.dataset.name = customer.name;
+            newOption.dataset.phone = customer.phone;
+            newOption.dataset.address = customer.address;
+            customerSelect.add(newOption);
+        }
+
+        // 删除客户
+        function deleteCustomer(customerId, customerName) {
+            console.log('删除客户:', customerId, customerName);
+
+            // 设置删除确认模态框内容
+            document.getElementById('deleteConfirmMessage').textContent = `确定要删除客户 "${customerName}" 吗？此操作不可恢复。`;
+
+            // 设置删除操作
+            currentDeleteAction = function() {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+                fetch(`/customer/${customerId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('删除响应:', data);
+
+                    if (data.code === 200) {
+                        showToast(data.msg, 'success');
+                        // 移除客户卡片
+                        removeCustomerCard(customerId);
+                        // 同时从客户选择下拉框中移除
+                        removeCustomerFromSelect(customerId);
+                    } else {
+                        showToast('删除失败: ' + data.msg, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('删除客户时发生错误: ' + error.message, 'error');
+                });
+            };
+
+            // 显示删除确认模态框
+            new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+        }
+
+        // 从客户选择下拉框中移除客户
+        function removeCustomerFromSelect(customerId) {
+            const customerSelect = document.getElementById('customerSelect');
+            const option = customerSelect.querySelector(`option[value="${customerId}"]`);
+            if (option) {
+                customerSelect.remove(option.index);
+            }
+        }
+
+        // 移除客户卡片
+        function removeCustomerCard(customerId) {
+            const customerCard = document.getElementById(`customer-${customerId}`);
+            if (customerCard) {
+                // 添加淡出动画
+                customerCard.classList.add('fade-out');
+
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    customerCard.remove();
+
+                    // 检查是否还有客户卡片
+                    const customerListContainer = document.getElementById('customerListContainer');
+                    const customerCards = customerListContainer.querySelectorAll('.col-md-6');
+
+                    if (customerCards.length === 0) {
+                        // 如果没有客户了，显示空状态
+                        customerListContainer.innerHTML = '<div class="col-12" id="no-customers"><div class="alert alert-info">暂无客户数据</div></div>';
+                    }
+                }, 500);
+            }
+        }
+
+        // 确认删除操作
+        function confirmDeleteAction() {
+            if (currentDeleteAction) {
+                currentDeleteAction();
+                // 关闭模态框
+                bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+                // 重置删除操作
+                currentDeleteAction = null;
+            }
+        }
+
+        // 添加商品到订单
+        function addProduct(prodId, prodName, stock, price) {
+            const exists = selectedProducts.find(p => p.id === prodId);
+            if (exists) {
+                exists.qty += 1;
+            } else {
+                selectedProducts.push({ id: prodId, name: prodName, qty: 1, stock: stock, price: price });
+            }
+            renderSelectedProducts();
+        }
+
+        // 渲染已选商品
+        function renderSelectedProducts() {
+            const container = document.getElementById('selectedProducts');
+            const input = document.getElementById('itemsInput');
+            const orderSummary = document.getElementById('orderSummary');
+
+            if (selectedProducts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>暂无商品，请从下方选择</p></div>';
+                input.value = '';
+                orderSummary.style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            let items = [];
+            let totalItems = 0;
+            let totalAmount = 0;
+
+            selectedProducts.forEach(p => {
+                const subtotal = p.qty * p.price;
+                totalItems += p.qty;
+                totalAmount += subtotal;
+
+                html += `
+                    <div class="selected-product-item">
+                        <div>
+                            <span class="fw-semibold">${p.name}</span>
+                            <div class="text-muted small">¥${p.price}/件</div>
+                        </div>
+                        <div class="action-buttons">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="decreaseProduct(${p.id})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="mx-2 fw-semibold">${p.qty}件</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="increaseProduct(${p.id})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger"
+                                    onclick="removeProduct(${p.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                items.push(`${p.id}:${p.qty}`);
+            });
+            container.innerHTML = html;
+            input.value = items.join(';');
+
+            // 更新订单摘要
+            document.getElementById('summary-items-count').textContent = totalItems;
+            document.getElementById('summary-items-total').textContent = `¥${totalAmount.toFixed(2)}`;
+            document.getElementById('summary-order-total').textContent = `¥${totalAmount.toFixed(2)}`;
+            orderSummary.style.display = 'block';
+        }
+
+        // 从订单中移除商品
+        function removeProduct(prodId) {
+            selectedProducts = selectedProducts.filter(p => p.id !== prodId);
+            renderSelectedProducts();
+        }
+
+        // 增加商品数量
+        function increaseProduct(prodId) {
+            const product = selectedProducts.find(p => p.id === prodId);
+            if (product) {
+                product.qty += 1;
+                renderSelectedProducts();
+            }
+        }
+
+        // 减少商品数量
+        function decreaseProduct(prodId) {
+            const product = selectedProducts.find(p => p.id === prodId);
+            if (product) {
+                product.qty -= 1;
+                if (product.qty <= 0) {
+                    removeProduct(prodId);
+                } else {
+                    renderSelectedProducts();
+                }
+            }
+        }
+
+        // 更新订单状态
+        function updateStatus(orderId, status, orderCode) {
+            fetch("{% url 'order_update_status' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `order_id=${orderId}&status=${status}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showToast(`订单 ${orderCode} 状态已更新为 ${status}`, 'success');
+                } else {
+                    showToast(data.msg, 'error');
+                    // 如果更新失败，恢复原来的状态
+                    const select = document.querySelector(`#order-${orderId} select`);
+                    const previousStatus = Array.from(select.options).find(opt => opt.selected).value;
+                    select.value = previousStatus;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('更新订单状态时发生错误', 'error');
+                // 如果请求失败，恢复原来的状态
+                const select = document.querySelector(`#order-${orderId} select`);
+                const previousStatus = Array.from(select.options).find(opt => opt.selected).value;
+                select.value = previousStatus;
+            });
+        }
+
+        // 删除订单
+        function deleteOrder(orderId, orderCode) {
+            // 设置删除确认模态框内容
+            document.getElementById('deleteConfirmMessage').textContent = `确定要删除订单 "${orderCode}" 吗？此操作会级联删除明细，不可恢复。`;
+
+            // 设置删除操作
+            currentDeleteAction = function() {
+                fetch("{% url 'order_delete' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `order_id=${orderId}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        showToast(`订单 ${orderCode} 已成功删除`, 'success');
+                        // 移除订单行
+                        removeOrderRow(orderId);
+                    } else {
+                        showToast(data.msg, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('删除订单时发生错误', 'error');
+                });
+            };
+
+            // 显示删除确认模态框
+            new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+        }
+
+        // 移除订单行
+        function removeOrderRow(orderId) {
+            const orderRow = document.getElementById(`order-${orderId}`);
+            if (orderRow) {
+                // 添加淡出动画
+                orderRow.classList.add('fade-out');
+
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    orderRow.remove();
+
+                    // 检查是否还有订单
+                    const orderTableBody = document.getElementById('orderTableBody');
+                    const orderRows = orderTableBody.querySelectorAll('tr');
+
+                    if (orderRows.length === 1 && orderRows[0].id === 'no-orders') {
+                        // 如果没有订单了，显示空状态
+                        orderTableBody.innerHTML = '<tr id="no-orders"><td colspan="7" class="text-center">暂无订单数据</td></tr>';
+                    } else if (orderRows.length === 0) {
+                        // 如果没有订单了，显示空状态
+                        orderTableBody.innerHTML = '<tr id="no-orders"><td colspan="7" class="text-center">暂无订单数据</td></tr>';
+                    }
+                }, 500);
+            }
+        }
+
+        // 表单提交处理 - 统一提交订单函数
+        function submitOrder() {
+            console.log("开始提交订单...");
+
+            // 获取表单数据
+            const custName = document.getElementById('cust_name').value.trim();
+            const custPhone = document.getElementById('cust_phone').value.trim();
+            const custAddr = document.getElementById('cust_addr').value.trim();
+            const itemsInput = document.getElementById('itemsInput').value;
+
+            // 验证必填字段
+            if (!custName || !custPhone || !custAddr) {
+                showToast('请填写完整的客户信息', 'warning');
+                return false;
+            }
+
+            if (!itemsInput || selectedProducts.length === 0) {
+                showToast('请至少选择一个商品', 'warning');
+                return false;
+            }
+
+            console.log("提交的数据:", {
+                cust_name: custName,
+                cust_phone: custPhone,
+                cust_addr: custAddr,
+                items: itemsInput
+            });
+
+            // 显示加载状态
+            const submitBtn = document.querySelector('#orderForm button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = '提交中...';
+            submitBtn.disabled = true;
+
+            // 准备提交数据
+            const formData = new FormData();
+            formData.append('cust_name', custName);
+            formData.append('cust_phone', custPhone);
+            formData.append('cust_addr', custAddr);
+            formData.append('items', itemsInput);
+
+            // 发送请求
+            fetch("{% url 'order_create' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => {
+                console.log("响应状态:", response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log("服务器响应:", data);
+                if (data.code === 200) {
+                    showToast('订单创建成功: ' + data.msg, 'success');
+                    // 重置表单
+                    document.getElementById('orderForm').reset();
+                    selectedProducts = [];
+                    renderSelectedProducts();
+                    document.getElementById('customerSelect').selectedIndex = 0;
+                } else {
+                    showToast('订单创建失败: ' + data.msg, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('请求失败:', error);
+                showToast('网络错误，请重试: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                console.log("恢复按钮状态");
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+
+            return false;
+        }
+
+        // 获取Cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 绑定提交事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const orderForm = document.getElementById('orderForm');
+            if (orderForm) {
+                orderForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitOrder();
+                });
+            }
+        });
+    </script>
+</body>
+</html>
