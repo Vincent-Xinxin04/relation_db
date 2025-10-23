@@ -20,7 +20,6 @@ CREATE TABLE `category` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
 
 
--- 3. 商品表（product）- 无外键依赖
 CREATE TABLE `product` (
   `product_id` INT NOT NULL AUTO_INCREMENT COMMENT '商品ID',
   `name` VARCHAR(100) NOT NULL COMMENT '商品名称',
@@ -92,7 +91,7 @@ CREATE TABLE `shop_order_item` (
   CONSTRAINT `shop_order_item_product_id_fk`
     FOREIGN KEY (`product_id`)
     REFERENCES `product` (`product_id`)
-    ON DELETE RESTRICT,  -- 修复：将PROTECT改为MySQL支持的RESTRICT
+    ON DELETE RESTRICT,
 
   INDEX `shop_order_item_product_id_idx` (`product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
@@ -113,6 +112,6 @@ CREATE TABLE `access_logs` (
 
   CONSTRAINT `access_logs_user_id_fk`
     FOREIGN KEY (`user_id`)
-    REFERENCES `auth_user` (`id`)  -- 注意：需确保`auth_user`表已创建
+    REFERENCES `auth_user` (`id`)
     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='访问性能日志表';

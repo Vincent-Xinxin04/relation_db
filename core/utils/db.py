@@ -4,9 +4,6 @@ from django.conf import settings
 
 
 def get_db_conn() -> Optional[pymysql.connections.Connection]:
-    """
-    修复后：符合实验一要求的pymysql连接（移除无效参数，聚焦业务数据库）
-    """
     conn = None
     try:
         db_conf = settings.DATABASES['default']
@@ -144,7 +141,6 @@ def with_transaction(func):
     """
     事务装饰器：控制复杂业务原子性（如订单创建：客户→订单→明细→库存）
     """
-
     def wrapper(*args, **kwargs):
         conn = None
         try:
@@ -156,7 +152,7 @@ def with_transaction(func):
         except Exception as e:
             if conn and conn.open:
                 conn.rollback()  # 异常时回滚，符合ACID特性
-            raise Exception(f"事务执行失败（🔶2-17）：{str(e)}")
+            raise Exception(f"事务执行失败：{str(e)}")
         finally:
             if conn and conn.open:
                 conn.close()  # 释放连接
