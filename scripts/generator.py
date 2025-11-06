@@ -30,7 +30,7 @@ def main():
     generate_categories()
     generate_customers(200)  # 200个真实客户
     generate_products(100)  # 100个真实商品
-    generate_orders_and_items(50)  # 50个真实订单
+    generate_orders_and_items(100000)  # 10000个真实订单
 
     print("所有真实模拟数据生成完成！")
     print_stats()
